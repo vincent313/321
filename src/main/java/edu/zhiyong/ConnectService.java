@@ -27,14 +27,14 @@ import java.net.InetSocketAddress;
         connectionNumber--;
     if (userName!=null){
         OnlineUserPool.removeOnlineUser(userName);
+        OnlineUserPool.removeOnlineUser(webSocket);
     };
         System.out.println("Current Connection number:"+connectionNumber);
     }
 
     @Override
     public void onMessage(WebSocket webSocket, String message) {
-        String replayFromControlCenter=ControlCenter.messageAnalysis(message,webSocket);
-        webSocket.send(replayFromControlCenter);
+        ControlCenter.messageAnalysis(message,webSocket);
 
     }
 
