@@ -90,49 +90,41 @@ class ControlCenter {
              String from=map.get("from");
 
 
+        Gson gson=new Gson();
         if (userRelation.get(from).contains(to)){
-            System.out.println("6");
-            Gson gson=new Gson();
             String jsonStr = gson.toJson(map);
             respond(to,jsonStr);
-            respond(websocket,"{\"type\":\"messageSuccess\",\"to\":\"jian\",\"messageId\":\"123132321\"}");
+            map.put("type","messageSuccess");
+            String ack=gson.toJson(map);
+            respond(websocket,ack);
         }else{
-            System.out.println("7");
-            respond(websocket,"{\"type\":\"messageFail\",\"to\":\"jian\",\"messageId\":\"123132321\",\"content\":\"not your friend\"}");
+            map.put("type","messageFail");
+            map.put("content","not your friend");
+            String ack=gson.toJson(map);
+            respond(websocket,ack);
         }
-        System.out.println("8");
-
-/*        if(registeredUserList.containsKey(to)){
-             Gson gson=new Gson();
-            String jsonStr = gson.toJson(map);
-            respond(to,jsonStr);
-            respond(websocket,"send");
-    }else{
-        respond(websocket,"Messaging fail,User not found");
-    }*/
     }
 
-/*    //dont need to verify friend relation
-    static void sendSystemMessage(Map<String,String> map, WebSocket websocket){
-        String to=map.get("to");
-        if(registeredUserList.containsKey(to)){
-            Gson gson=new Gson();
-            String jsonStr = gson.toJson(map);
-            respond(to,jsonStr);
-            respond(websocket,"Friend request send.");
-        }else{
-            respond(websocket,"Friend request fail,user not found");
-        }
-    }*/
 
     //send friend request, user can only initiate the same request once in a three-day period
     static synchronized void sendFriendRequest(Map<String,String> map,WebSocket websocket){
+        String sender=map.get("from");
+        String receiver=map.get("to");
+        String requestID=sender+receiver;
+
         if (!verifySender(map, websocket)){return;}
+
         if(!registeredUserList.containsKey(map.get("to"))){
+            System.out.println("here");
             respond(websocket,"{\"type\":\"friendReFail\",\"content\":\"User not found\"}");
             return;
         }
-        String requestID=map.get("from")+map.get("to");
+
+        if(userRelation.get(receiver).contains(sender)){
+            respond(websocket,"{\"type\":\"friendAddAlready\",\"content\":\"You already added this user\"}");
+            return;
+        }
+
         if(friendRequestList.containsKey(requestID)){
             respond(websocket,"{\"type\":\"friendReRepeat\",\"content\":\"Please do not send same friend requests within 3 days\"}");
             return;
@@ -174,15 +166,28 @@ class ControlCenter {
             map.put("content","Friend request does not exist or expired");
             Gson gson=new Gson();
             String jsonStr = gson.toJson(map);
-            respond(websocket,"Friend request does not exist or expired");
+            respond(websocket,jsonStr);
         }
 
     }
 
     static synchronized void declineFriendRequest(Map<String,String> map,WebSocket websocket){
         if (!verifySender(map, websocket)){return;}
-
-
+        String sender=map.get("from");
+        String receiver=map.get("to");
+        String request=receiver+sender;
+        if(friendRequestList.containsKey(request)){
+            friendRequestList.remove(request);
+            return;
+        }else{
+            String currentTime=Long.toString(System.currentTimeMillis());
+            map.put("time",currentTime);
+            map.put("content","Friend request does not exist or expired");
+            map.put("type","FriendAddFail");
+            Gson gson=new Gson();
+            String jsonStr = gson.toJson(map);
+            respond(websocket,jsonStr);
+        }
     }
 
     static void respond( WebSocket webSocket,String message){
