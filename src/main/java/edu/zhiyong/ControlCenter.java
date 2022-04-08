@@ -22,11 +22,14 @@ class ControlCenter {
         Map<String,String> messageMap=gson.fromJson(message,Map.class);
 
             switch (messageMap.get("type")){
-            case "singup":
-                 singUp(messageMap,webSocket);
+                case "test":
+                    respond(webSocket,"You are connected");
+                    return;
+            case "signup":
+                 signup(messageMap,webSocket);
                  return;
-            case "singin":
-                 singIn(messageMap,webSocket);
+            case "login":
+                 login(messageMap,webSocket);
                  return;
             case "message":
                          sendMessage(messageMap,webSocket);
@@ -51,37 +54,39 @@ class ControlCenter {
                     }
     }
 
-//str="{'type':'singup','user':'zhiyong','pas':'cist321'}";
-    static synchronized void singUp(Map<String,String> map,WebSocket webSocket){
+//str="{'type':'signup','user':'zhiyong','pas':'cist321'}";
+    static synchronized void signup(Map<String,String> map,WebSocket webSocket){
     String name=map.get("user");
     if(registeredUserList.containsKey(name)){
-        respond(webSocket,"{\"type\":\"singUp\",\"content\":\"User name has been registered\"}");
+        respond(webSocket,"{\"type\":\"signUp\",\"content\":\"User name has been registered\"}");
     }else{
         registeredUserList.put(name,map.get("pas"));
         // create user friend list
         HashSet<String> friendList=new HashSet<String>();
         userRelation.put(name,friendList);
-        respond(webSocket,"{\"type\":\"singUp\",\"content\":\"Registration success\"}");
+        respond(webSocket,"{\"type\":\"signUp\",\"content\":\"Registration success\"}");
     }
     }
 
 //str="{'type':'singin','user':'zhiyong','pas':'cist321'}";
-    static void singIn(Map<String,String> map,WebSocket webSocket){
+    static void login(Map<String,String> map,WebSocket webSocket){
     String username=map.get("user");
     String password=map.get("pas");
 
     if (registeredUserList.containsKey(username)&& registeredUserList.get(username).equals(password)){
         OnlineUserPool.addOnlineUser(username,webSocket);
-        respond(webSocket,"{\"type\":\"signIn\",\"content\":\"Login success\"}");
+        respond(webSocket,"{\"type\":\"login\",\"content\":\"Login success\"}");
     }else{
-        respond(webSocket,"{\"type\":\"signIn\",\"content\":\"Login fail\"}");
+        respond(webSocket,"{\"type\":\"login\",\"content\":\"Login fail\"}");
     }
 
     }
+
+    /*
+    1.verify sender is sender
+    2.verify user relationship
+    3.send message*/
     //str="{'type':'message','from':'zhiyong','to':'jian','time':'09/03/2022','content':'somemessage'}";
-    //For now, just implemented sending messages to registered online users.
-
-// need to verity friend relation
     static void sendMessage(Map<String,String> map, WebSocket websocket){
         if (!verifySender(map, websocket)) {
 

@@ -14,8 +14,7 @@ class OnlineUserPool {
                 return onLineUserMap.get(userName);
     }
      static String getUserNameByWebsocket(WebSocket webSocket) {
-        return onLineWebsocketUser.get(webSocket);
-    }
+        return onLineWebsocketUser.get(webSocket);    }
 
     //add online user in to the pool
     static void addOnlineUser(String userName, WebSocket connect){
