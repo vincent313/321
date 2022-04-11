@@ -120,7 +120,7 @@ class ControlCenter {
         if (!verifySender(map, websocket)){return;}
 
         if(!registeredUserList.containsKey(map.get("to"))){
-            System.out.println("here");
+           // System.out.println("here");
             respond(websocket,"{\"type\":\"friendReFail\",\"content\":\"User not found\"}");
             return;
         }

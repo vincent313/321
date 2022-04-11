@@ -29,8 +29,10 @@ import java.net.InetSocketAddress;
         OnlineUserPool.removeOnlineUser(userName);
         OnlineUserPool.removeOnlineUser(webSocket);
     };
+        webSocket.close();
         System.out.println("Current Connection number:"+connectionNumber);
     }
+
 
     @Override
     public void onMessage(WebSocket webSocket, String message) {
