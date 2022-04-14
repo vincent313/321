@@ -6,13 +6,16 @@ import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
-
+/*
+*
+* */
 /*
 When client sign up , client encrypt and send to the server their AES key(using server RSA key)
 Server store client AES key, when client log in (RSA), server new this instance with client AES key.
@@ -25,8 +28,8 @@ So
 */
 public class EncryptDecrypt {
     private String userName=null;
-    private IvParameterSpec iv=new IvParameterSpec(new byte[16]);
-    private byte[] AesKey=null;
+    private static IvParameterSpec iv=new IvParameterSpec("aaaaaaaaaaaaaaaa".getBytes(StandardCharsets.UTF_8));
+
     private static final String AES_TYPE="AES/CBC/NoPadding";
     private static final int AES_Block_Size=16;
     private static String RsaPublickey = null;
@@ -40,37 +43,7 @@ public class EncryptDecrypt {
         this.userName = userName;
     }
 
-    public String getAesKey() {
-        return new String(Base64.getEncoder().encode(AesKey));
-    }
-
-    public void setAesKey(String str) {
-        AesKey = Base64.getDecoder().decode(str);
-    }
-
-    protected void aesGenerateKey(){
-        SecureRandom sr=null;
-        // Generate random instance, in SHA1PRNG algorithm not exist, using new secureRandom  (NativePRNG algorithm)
-        try {
-            sr=SecureRandom.getInstance("SHA1PRNG");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            sr=new SecureRandom();
-        }
-        //set seed
-        //sr.setSeed(Calendar.getInstance().getTimeInMillis());
-
-        // generate 128bit(16 byte) aes key
-        try {
-            KeyGenerator keyGen = KeyGenerator.getInstance("AES");
-            keyGen.init(128, sr);
-             AesKey = keyGen.generateKey().getEncoded();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private byte[] padding(byte [] b) throws UnsupportedEncodingException {
+    private static byte[] padding(byte [] b) throws UnsupportedEncodingException {
 
         int padsize;
         //calculate how many bit need to pad
@@ -90,13 +63,13 @@ public class EncryptDecrypt {
         return combine;
     }
 
-    private String unPadding(byte[] b){
+    private static String unPadding(byte[] b){
         int index= (b.length-b[(b.length-1)]);
         byte [] a= Arrays.copyOfRange(b,0,index);
         return new String(a);
     }
 
-    private byte inttobyte (int x){
+    private static byte inttobyte (int x){
         return (byte)x;
     }
 
@@ -104,8 +77,8 @@ public class EncryptDecrypt {
         return b&0xFF;
     }
 
-    protected String aesEncry(String s) throws NoSuchPaddingException, NoSuchAlgorithmException, UnsupportedEncodingException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException {
-        SecretKeySpec keySpec = new SecretKeySpec(AesKey, "AES");
+    protected static String aesEncry(String s,String AesKey) throws NoSuchPaddingException, NoSuchAlgorithmException, UnsupportedEncodingException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, InvalidAlgorithmParameterException {
+        SecretKeySpec keySpec = new SecretKeySpec(Base64.getDecoder().decode(AesKey.getBytes(StandardCharsets.UTF_8)), "AES");
         Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
         byte[] byteContent = s.getBytes("utf-8");
         byteContent=padding(byteContent);
@@ -113,8 +86,8 @@ public class EncryptDecrypt {
         return new String(Base64.getEncoder().encode(cipher.doFinal(byteContent)));
     }
 
-    protected String aesDecrypt(String s) throws NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException {
-        SecretKeySpec keySpec = new SecretKeySpec(AesKey, "AES");
+    protected static String aesDecrypt(String s,String AesKey) throws NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException {
+        SecretKeySpec keySpec = new SecretKeySpec(Base64.getDecoder().decode(AesKey.getBytes(StandardCharsets.UTF_8)), "AES");
         Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
 
 
@@ -216,10 +189,13 @@ public class EncryptDecrypt {
         //generate key instance
         PrivateKey priKey = KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(privateKeyInBytes));
         //generate cipher
-        Cipher cipher = Cipher.getInstance("RSA");
+        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
         cipher.init(2, priKey);
         //decrypt , get plain byte[] , trans to String
         String outStr = new String(cipher.doFinal(input));
         return outStr;
+    }
+    protected static String getiv(){
+        return new String(Base64.getEncoder().encode(iv.getIV()));
     }
 }
